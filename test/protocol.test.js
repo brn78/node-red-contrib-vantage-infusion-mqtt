@@ -1,4 +1,4 @@
-﻿const assert = require("assert");
+const assert = require("assert");
 const proto = require("../vantage-protocol.js");
 
 console.log("Starting unit tests for vantage-protocol.js...\n");
@@ -208,19 +208,51 @@ it("buildSyncRequests: generates requests for configured IDs", () => {
     ]);
 });
 
-it("buildDiscoveryMessages: generates Home Assistant config topics", () => {
+it("parseVantageEvent: Thermostat (R:THERM 201 21.0 25.0 22.5 HEAT AUTO)", () => {
+    const res = proto.parseVantageEvent("R:THERM 201 21.0 25.0 22.5 HEAT AUTO");
+    assert.ok(res);
+    assert.strictEqual(res.type, "thermostat");
+    const payload = JSON.parse(res.mqttMessage.payload);
+    assert.strictEqual(payload.heat_sp, 21.0);
+    assert.strictEqual(payload.cool_sp, 25.0);
+    assert.strictEqual(payload.indoor_temp, 22.5);
+    assert.strictEqual(payload.mode, "HEAT");
+    assert.strictEqual(payload.fan, "AUTO");
+});
+
+it("parseVantageEvent: Keypad LED (R:LED 401 1)", () => {
+    const res = proto.parseVantageEvent("R:LED 401 1");
+    assert.ok(res);
+    assert.strictEqual(res.type, "led");
+    const payload = JSON.parse(res.mqttMessage.payload);
+    assert.strictEqual(payload.state, "ON");
+});
+
+it("buildVantageCommands: Task, LED, and Thermostat", () => {
+    assert.deepStrictEqual(proto.buildVantageCommands({ topic: "301/task/vantage/set", payload: "BOOT" }), ["TASK 301 BOOT"]);
+    assert.deepStrictEqual(proto.buildVantageCommands({ topic: "401/led/vantage/set", payload: "ON" }), ["LED 401 1"]);
+    assert.deepStrictEqual(proto.buildVantageCommands({ topic: "401/led/vantage/set", payload: "OFF" }), ["LED 401 0"]);
+    assert.deepStrictEqual(proto.buildVantageCommands({ topic: "201/thermostat/heat/vantage/set", payload: 21.5 }), ["THERM 201 21.5"]);
+    assert.deepStrictEqual(proto.buildVantageCommands({ topic: "201/thermostat/vantage/sync" }), ["GETTHERM 201"]);
+    assert.deepStrictEqual(proto.buildVantageCommands({ topic: "401/led/vantage/sync" }), ["GETLED 401"]);
+});
+
+it("buildDiscoveryMessages: generates Home Assistant config topics with tasks, leds, therms", () => {
     const msgs = proto.buildDiscoveryMessages({
         load: "120",
         blind: "55",
         sensor: "141",
-        variable: "501"
+        variable: "501",
+        task: "301",
+        buttons_string: "45",
+        led: "401",
+        thermostat: "201"
     });
-    assert.strictEqual(msgs.length, 5); // controller connection + 1 load + 1 blind + 1 sensor + 1 variable
-    assert.ok(msgs[0].topic.includes("binary_sensor/vantage_connection/config"));
-    assert.ok(msgs[1].topic.includes("light/vantage_load_120/config"));
-    assert.ok(msgs[2].topic.includes("cover/vantage_blind_55/config"));
-    assert.ok(msgs[3].topic.includes("sensor/vantage_sensor_141/config"));
-    assert.ok(msgs[4].topic.includes("switch/vantage_variable_501/config"));
+    assert.strictEqual(msgs.length, 9); // connection + load + blind + sensor + variable + task + button + led + therm
+    assert.ok(msgs.some(m => m.topic.includes("button/vantage_task_301/config")));
+    assert.ok(msgs.some(m => m.topic.includes("button/vantage_button_45/config")));
+    assert.ok(msgs.some(m => m.topic.includes("light/vantage_led_401/config")));
+    assert.ok(msgs.some(m => m.topic.includes("climate/vantage_therm_201/config")));
 });
 
 console.log(`\nResults: ${passed} passed, ${failed} failed.`);

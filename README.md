@@ -1,4 +1,4 @@
-﻿# node-red-contrib-vantage-infusion-mqtt
+# node-red-contrib-vantage-infusion-mqtt
 
 [![npm version](https://img.shields.io/npm/v/node-red-contrib-vantage-infusion-mqtt.svg)](https://www.npmjs.com/package/node-red-contrib-vantage-infusion-mqtt)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -102,6 +102,7 @@ Se utilizzi l'add-on ufficiale Node-RED su Home Assistant:
 | **Sensore** | `<VID>/sensor/vantage/status` | `{"state":350,"attributes":{...}}` |
 | **Task Programmato** | `<VID>/task/vantage/status` | `{"state":"ON","attributes":{...}}` |
 | **LED Feedback** | `<VID>/led/vantage/status` | `{"state":"ON","attributes":{...}}` |
+| **Termostato / Clima** | `<VID>/thermostat/vantage/status`| `{"heat_sp":21.0,"cool_sp":25.0,"indoor_temp":22.5,"mode":"HEAT","fan":"AUTO"}` |
 | **Versione Controller** | `version/vantage/status` | `{"state":"3.2.0 InFusion","attributes":{...}}` |
 | **Stato Connessione** | `connection/vantage/status` | `{"state":"ON","attributes":{"function":"Connection status"}}` |
 
@@ -118,8 +119,10 @@ Se utilizzi l'add-on ufficiale Node-RED su Home Assistant:
 | **Tapparella Posizione** | `<VID>/blind/vantage/set` | `0`–`100` oppure `{"position":75}` | `BLIND <VID> POS <0-100>` |
 | **Pressione Pulsante** | `<VID>/button/vantage/set` | `"PRESS"`, `"RELEASE"`, `"TAP"` | `BTNPRESS <VID>`, `BTNRELEASE <VID>`, `BTN <VID>` |
 | **Esecuzione Task** | `<VID>/task/vantage/set` | `"BOOT"`, `"ON"` o trigger | `TASK <VID> BOOT` |
+| **LED Feedback On/Off** | `<VID>/led/vantage/set` | `"ON"` / `"OFF"` o `1` / `0` | `LED <VID> 1` / `LED <VID> 0` |
+| **Termostato Setpoint** | `<VID>/thermostat/vantage/set` | `21.5` oppure `{"heat_sp":21,"cool_sp":25}` | `THERM <VID> 21.5 23.5` |
 | **Imposta Variabile** | `<VID>/variable/vantage/set`| qualsiasi valore | `VARIABLE <VID> <valore>` |
-| **Sincronizza Singolo**| `<VID>/<oggetto>/vantage/sync` | qualsiasi | `GETLOAD <VID>`, `GETBLIND <VID>`, ecc. |
+| **Sincronizza Singolo**| `<VID>/<oggetto>/vantage/sync` | qualsiasi | `GETLOAD <VID>`, `GETBLIND <VID>`, `GETTHERM <VID>`, `GETLED <VID>`, ecc. |
 | **Sincronizza Tutto** | `all/vantage/sync` o `vantage/sync` | `"SYNC"` o qualsiasi | Invia le richieste di stato per tutte le entità configurate |
 | **Comando Host Diretto** | *(qualsiasi topic o non specificato)* | `"LOAD 120 80"` o `"BTN 45"` | Inviato direttamente al controller Vantage |
 
@@ -140,6 +143,9 @@ Se utilizzi l'add-on ufficiale Node-RED su Home Assistant:
 - **Sensori (VID)**: Elenco separato da virgole dei VID dei sensori (es. `141`).
 - **Variabili (VID)**: Elenco separato da virgole dei VID delle variabili interne (es. `501, 502`).
 - **Pulsanti (VID)**: Elenco separato da virgole dei pulsanti tastiera da resettare con `RELEASE` all'avvio.
+- **Task / Scenari (VID)**: Elenco separato da virgole dei VID dei task e macro globali (es. `301, 302`).
+- **Termostati (VID)**: Elenco separato da virgole dei VID dei termostati/clima (es. `201, 202`).
+- **LED Tastiere (VID)**: Elenco separato da virgole dei VID dei LED di feedback (es. `401, 402`).
 - **Sincronizza all'avvio**: Invia automaticamente le richieste `GET...` alla connessione con il controller.
 - **Sincronizzazione Periodica**: Intervallo in secondi tra le sincronizzazioni di stato forzate (predefinito: `300`).
 - **Watchdog**: Monitora l'attività della connessione e imposta lo stato di connessione a `OFF` in caso di mancata risposta.

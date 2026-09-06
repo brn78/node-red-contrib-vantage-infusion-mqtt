@@ -1,4 +1,4 @@
-﻿{
+{
     "vantage-controller": {
         "label": {
             "host": "Host / Indirizzo IP",
@@ -22,6 +22,11 @@
             "variable_sync": "Sincronizza stato variabili",
             "buttons_string": "Pulsanti Tastiere (VID)",
             "button_sync": "Resetta stato pulsanti all'avvio",
+            "task": "Task / Scenari (VID)",
+            "thermostat": "Termostati / Clima (VID)",
+            "thermostat_sync": "Sincronizza stato termostati",
+            "led": "LED Tastierini (VID)",
+            "led_sync": "Sincronizza stato LED",
             "sync_startup": "Sincronizza all'avvio / connessione",
             "sync_period": "Sincronizzazione Periodica (sec)",
             "watchdog": "Attiva Watchdog connessione",

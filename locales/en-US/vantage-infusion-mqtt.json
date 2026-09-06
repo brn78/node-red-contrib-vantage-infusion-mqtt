@@ -1,4 +1,4 @@
-﻿{
+{
     "vantage-controller": {
         "label": {
             "host": "Host / IP Address",
@@ -22,6 +22,11 @@
             "variable_sync": "Synchronize variables",
             "buttons_string": "Keypad Buttons (VID)",
             "button_sync": "Reset buttons state on connect",
+            "task": "Tasks / Macros (VID)",
+            "thermostat": "Thermostats / Climate (VID)",
+            "thermostat_sync": "Synchronize thermostats",
+            "led": "Keypad LEDs (VID)",
+            "led_sync": "Synchronize keypad LEDs",
             "sync_startup": "Synchronize on connect",
             "sync_period": "Periodic Synchronization (sec)",
             "watchdog": "Enable Connection Watchdog",

@@ -22,6 +22,11 @@ module.exports = function (RED) {
         node.variable_sync = n.variable_sync !== false;
         node.buttons_string = n.buttons_string || "";
         node.button_sync = n.button_sync || false;
+        node.task = n.task || "";
+        node.thermostat = n.thermostat || "";
+        node.thermostat_sync = n.thermostat_sync !== false;
+        node.led = n.led || "";
+        node.led_sync = n.led_sync !== false;
         node.sync_startup = n.sync_startup !== false;
         node.sync_period = parseInt(n.sync_period, 10) || 0;
         node.watchdog = n.watchdog !== false;
@@ -44,6 +49,11 @@ module.exports = function (RED) {
             variable_sync: node.variable_sync,
             buttons_string: node.buttons_string,
             button_sync: node.button_sync,
+            task: node.task,
+            thermostat: node.thermostat,
+            thermostat_sync: node.thermostat_sync,
+            led: node.led,
+            led_sync: node.led_sync,
             discoveryPrefix: node.discovery_prefix
         };
 

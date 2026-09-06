@@ -1,6 +1,6 @@
-﻿{
+{
   "name": "node-red-contrib-vantage-infusion-mqtt",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Professional Vantage InFusion Host Commands to MQTT bridge for Node-RED with native TCP/Telnet connection, dual output (MQTT and raw Vantage) and optional Home Assistant Auto-Discovery",
   "keywords": [
     "node-red",
@@ -24,6 +24,9 @@
   "homepage": "https://github.com/brn78/node-red-contrib-vantage-infusion-mqtt#readme",
   "engines": {
     "node": ">=12.0.0"
+  },
+  "scripts": {
+    "test": "node test/protocol.test.js && node test/lifecycle.test.js"
   },
   "node-red": {
     "version": ">=2.0.0",

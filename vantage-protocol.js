@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vantage InFusion Host Commands Protocol Engine for Node-RED
  * Author: Bruno Leonardi
  * License: MIT
@@ -14,6 +14,7 @@ const TOPIC_VARIABLE_STATUS = "/variable/vantage/status";
 const TOPIC_SENSOR_STATUS = "/sensor/vantage/status";
 const TOPIC_TASK_STATUS = "/task/vantage/status";
 const TOPIC_LED_STATUS = "/led/vantage/status";
+const TOPIC_THERMOSTAT_STATUS = "/thermostat/vantage/status";
 const TOPIC_VERSION_STATUS = "version/vantage/status";
 const TOPIC_CONNECTION_STATUS = "connection/vantage/status";
 
@@ -339,7 +340,50 @@ function parseVantageEvent(line, controllerVersion = "unknown") {
         };
     }
 
-    // 8. VERSION
+    // 8. THERMOSTAT
+    if (cmd === "THERM") {
+        if (isNaN(vid)) return null;
+        const heatSp = parseFloat(tokens[2]) || 20.0;
+        const coolSp = parseFloat(tokens[3]) || 24.0;
+        const indoorTemp = parseFloat(tokens[4]) || heatSp;
+        const mode = (tokens[5] || "AUTO").toUpperCase();
+        const fan = (tokens[6] || "AUTO").toUpperCase();
+
+        return {
+            type: "thermostat",
+            vid: vid,
+            topic: `${vid}${TOPIC_THERMOSTAT_STATUS}`,
+            mqttMessage: {
+                topic: `${vid}${TOPIC_THERMOSTAT_STATUS}`,
+                payload: JSON.stringify({
+                    heat_sp: heatSp,
+                    cool_sp: coolSp,
+                    indoor_temp: indoorTemp,
+                    mode: mode,
+                    fan: fan,
+                    state: "ON",
+                    attributes: {
+                        manufacturer: MANUFACTURER,
+                        powered_by: POWERED_BY,
+                        vid: vid,
+                        function: "Thermostat Function",
+                        heat_sp: heatSp,
+                        cool_sp: coolSp,
+                        indoor_temp: indoorTemp,
+                        mode: mode,
+                        fan: fan,
+                        response: rawLine,
+                        controller_version: controllerVersion
+                    }
+                }),
+                qos: 0,
+                retain: true
+            },
+            statusText: `Thermostat ${vid} -> ${indoorTemp}°C (Heat: ${heatSp}, Cool: ${coolSp})`
+        };
+    }
+
+    // 9. VERSION
     if (cmd === "VERSION") {
         const ver = tokens.slice(1).join(" ") || "unknown";
 
@@ -444,6 +488,12 @@ function buildVantageCommands(msg, options = {}) {
     if (topic.endsWith("/variable/vantage/sync") && !isNaN(vid)) {
         return [`GETVARIABLE ${vid}`];
     }
+    if (topic.endsWith("/thermostat/vantage/sync") && !isNaN(vid)) {
+        return [`GETTHERM ${vid}`];
+    }
+    if (topic.endsWith("/led/vantage/sync") && !isNaN(vid)) {
+        return [`GETLED ${vid}`];
+    }
 
     // 1. LIGHTING LOAD SET
     if (topic.endsWith("/load/vantage/set") && !isNaN(vid)) {
@@ -527,6 +577,32 @@ function buildVantageCommands(msg, options = {}) {
         return [`VARIABLE ${vid} ${payload}`];
     }
 
+    // 6. LED SET
+    if (topic.endsWith("/led/vantage/set") && !isNaN(vid)) {
+        const pUpper = String(payload).toUpperCase();
+        const stateNum = (pUpper === "ON" || pUpper === "1" || pUpper === "TRUE") ? 1 : 0;
+        return [`LED ${vid} ${stateNum}`];
+    }
+
+    // 7. THERMOSTAT SET
+    if (topic.endsWith("/thermostat/heat/vantage/set") && !isNaN(vid)) {
+        const val = parseFloat(payload);
+        if (!isNaN(val)) return [`THERM ${vid} ${val}`];
+    }
+    if (topic.endsWith("/thermostat/cool/vantage/set") && !isNaN(vid)) {
+        const val = parseFloat(payload);
+        if (!isNaN(val)) return [`THERM ${vid} 0 ${val}`];
+    }
+    if (topic.endsWith("/thermostat/vantage/set") && !isNaN(vid)) {
+        if (payloadObj && payloadObj.heat_sp !== undefined) {
+            const h = parseFloat(payloadObj.heat_sp) || 20;
+            const c = parseFloat(payloadObj.cool_sp) || 24;
+            return [`THERM ${vid} ${h} ${c}`];
+        }
+        const val = parseFloat(payload);
+        if (!isNaN(val)) return [`THERM ${vid} ${val} ${val + 2}`];
+    }
+
     return [];
 }
 
@@ -591,6 +667,20 @@ function buildSyncRequests(options = {}) {
     if (options.variable_sync !== false && variables.length > 0) {
         for (const vid of variables) {
             commands.push(`GETVARIABLE ${vid}`);
+        }
+    }
+
+    const therms = parseIdList(options.thermostat);
+    if (options.thermostat_sync !== false && therms.length > 0) {
+        for (const vid of therms) {
+            commands.push(`GETTHERM ${vid}`);
+        }
+    }
+
+    const leds = parseIdList(options.led);
+    if (options.led_sync !== false && leds.length > 0) {
+        for (const vid of leds) {
+            commands.push(`GETLED ${vid}`);
         }
     }
 
@@ -731,6 +821,107 @@ function buildDiscoveryMessages(options = {}) {
         });
     }
 
+    // Tasks (Buttons in Home Assistant)
+    const tasks = parseIdList(options.task);
+    for (const vid of tasks) {
+        messages.push({
+            topic: `${prefix}/button/vantage_task_${vid}/config`,
+            payload: JSON.stringify({
+                name: `Vantage Task ${vid}`,
+                unique_id: `vantage_task_${vid}`,
+                command_topic: `${vid}/task/vantage/set`,
+                payload_press: "BOOT",
+                icon: "mdi:play-circle-outline",
+                device: {
+                    identifiers: [`vantage_task_${vid}`],
+                    name: `Vantage Task ${vid}`,
+                    manufacturer: MANUFACTURER,
+                    via_device: "vantage_infusion_controller"
+                }
+            }),
+            qos: 0,
+            retain: true
+        });
+    }
+
+    // Keypad Buttons
+    const buttons = parseIdList(options.buttons_string);
+    for (const vid of buttons) {
+        messages.push({
+            topic: `${prefix}/button/vantage_button_${vid}/config`,
+            payload: JSON.stringify({
+                name: `Vantage Button ${vid}`,
+                unique_id: `vantage_button_${vid}`,
+                command_topic: `${vid}/button/vantage/set`,
+                payload_press: "PRESS",
+                icon: "mdi:radiobox-marked",
+                device: {
+                    identifiers: [`vantage_button_${vid}`],
+                    name: `Vantage Button ${vid}`,
+                    manufacturer: MANUFACTURER,
+                    via_device: "vantage_infusion_controller"
+                }
+            }),
+            qos: 0,
+            retain: true
+        });
+    }
+
+    // Keypad LEDs
+    const leds = parseIdList(options.led);
+    for (const vid of leds) {
+        messages.push({
+            topic: `${prefix}/light/vantage_led_${vid}/config`,
+            payload: JSON.stringify({
+                name: `Vantage LED ${vid}`,
+                unique_id: `vantage_led_${vid}`,
+                command_topic: `${vid}/led/vantage/set`,
+                state_topic: `${vid}/led/vantage/status`,
+                value_template: "{{ value_json.state }}",
+                payload_on: "ON",
+                payload_off: "OFF",
+                icon: "mdi:led-on",
+                device: {
+                    identifiers: [`vantage_led_${vid}`],
+                    name: `Vantage LED ${vid}`,
+                    manufacturer: MANUFACTURER,
+                    via_device: "vantage_infusion_controller"
+                }
+            }),
+            qos: 0,
+            retain: true
+        });
+    }
+
+    // Thermostats (Climate)
+    const therms = parseIdList(options.thermostat);
+    for (const vid of therms) {
+        messages.push({
+            topic: `${prefix}/climate/vantage_therm_${vid}/config`,
+            payload: JSON.stringify({
+                name: `Vantage Thermostat ${vid}`,
+                unique_id: `vantage_therm_${vid}`,
+                temperature_command_topic: `${vid}/thermostat/vantage/set`,
+                temperature_state_topic: `${vid}/thermostat/vantage/status`,
+                temperature_state_template: "{{ value_json.heat_sp }}",
+                current_temperature_topic: `${vid}/thermostat/vantage/status`,
+                current_temperature_template: "{{ value_json.indoor_temp }}",
+                min_temp: 10,
+                max_temp: 35,
+                temp_step: 0.5,
+                temperature_unit: "C",
+                device: {
+                    identifiers: [`vantage_therm_${vid}`],
+                    name: `Vantage Thermostat ${vid}`,
+                    manufacturer: MANUFACTURER,
+                    via_device: "vantage_infusion_controller"
+                }
+            }),
+            qos: 0,
+            retain: true
+        });
+    }
+
     return messages;
 }
 
@@ -744,6 +935,7 @@ module.exports = {
     TOPIC_SENSOR_STATUS,
     TOPIC_TASK_STATUS,
     TOPIC_LED_STATUS,
+    TOPIC_THERMOSTAT_STATUS,
     TOPIC_VERSION_STATUS,
     TOPIC_CONNECTION_STATUS,
     stripTelnetIAC,

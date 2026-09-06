@@ -1,4 +1,4 @@
-﻿<script type="text/javascript">
+<script type="text/javascript">
     RED.nodes.registerType('vantage-infusion-mqtt', {
         category: 'Vantage Infusion',
         color: '#DDA0DD',
@@ -15,6 +15,11 @@
             variable_sync: { value: true },
             buttons_string: { value: "" },
             button_sync: { value: false },
+            task: { value: "" },
+            thermostat: { value: "" },
+            thermostat_sync: { value: true },
+            led: { value: "" },
+            led_sync: { value: true },
             sync_startup: { value: true },
             sync_period: { value: 300 },
             watchdog: { value: true },
@@ -103,6 +108,31 @@
         <label>&nbsp;</label>
         <input type="checkbox" id="node-input-button_sync" style="display:inline-block; width:auto; vertical-align:top;">
         <span data-i18n="vantage-infusion-mqtt.label.button_sync">Invia RELEASE pulsanti all'avvio</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-task"><i class="fa fa-play-circle-o"></i> <span data-i18n="vantage-infusion-mqtt.label.task">Task / Scenari VID</span></label>
+        <input type="text" id="node-input-task" placeholder="301, 302">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-thermostat"><i class="fa fa-thermometer-half"></i> <span data-i18n="vantage-infusion-mqtt.label.thermostat">Termostati VID</span></label>
+        <input type="text" id="node-input-thermostat" placeholder="201, 202">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-thermostat_sync" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.thermostat_sync">Sincronizza stato termostati</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-led"><i class="fa fa-circle"></i> <span data-i18n="vantage-infusion-mqtt.label.led">LED Tastierini VID</span></label>
+        <input type="text" id="node-input-led" placeholder="401, 402">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-led_sync" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.led_sync">Sincronizza stato LED</span>
     </div>
 
     <hr/>
