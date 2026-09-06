@@ -1,0 +1,165 @@
+﻿<script type="text/javascript">
+    RED.nodes.registerType('vantage-infusion-mqtt', {
+        category: 'Vantage Infusion',
+        color: '#DDA0DD',
+        defaults: {
+            name: { value: "" },
+            controller: { value: "", type: "vantage-controller", required: true },
+            load: { value: "" },
+            load_sync: { value: true },
+            blind: { value: "" },
+            blind_sync: { value: true },
+            sensor: { value: "" },
+            sensor_sync: { value: true },
+            variable: { value: "" },
+            variable_sync: { value: true },
+            buttons_string: { value: "" },
+            button_sync: { value: false },
+            sync_startup: { value: true },
+            sync_period: { value: 300 },
+            watchdog: { value: true },
+            mqtt_discovery: { value: false },
+            discovery_prefix: { value: "homeassistant" },
+            debug: { value: false }
+        },
+        inputs: 1,
+        outputs: 2,
+        inputLabels: function() { return "MQTT / Host Commands"; },
+        outputLabels: ["MQTT", "Vantage Raw"],
+        icon: "font-awesome/fa-exchange",
+        label: function () {
+            return this.name || "Vantage Infusion";
+        },
+        oneditprepare: function () {
+            $("#node-input-mqtt_discovery").change(function () {
+                if ($(this).is(":checked")) {
+                    $("#discovery-prefix-row").show();
+                } else {
+                    $("#discovery-prefix-row").hide();
+                }
+            });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="vantage-infusion-mqtt">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="vantage-infusion-mqtt.label.name">Nome</span></label>
+        <input type="text" id="node-input-name" placeholder="Vantage Infusion">
+    </div>
+    <div class="form-row">
+        <label for="node-input-controller"><i class="fa fa-server"></i> <span data-i18n="vantage-infusion-mqtt.label.controller">Controller</span></label>
+        <input type="text" id="node-input-controller">
+    </div>
+
+    <hr/>
+    <h4><i class="fa fa-list"></i> <span data-i18n="vantage-infusion-mqtt.section.entities">Entità Vantage (VID)</span></h4>
+
+    <div class="form-row">
+        <label for="node-input-load"><i class="fa fa-lightbulb-o"></i> <span data-i18n="vantage-infusion-mqtt.label.load">Luci / Carichi VID</span></label>
+        <input type="text" id="node-input-load" placeholder="120, 121, 122">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-load_sync" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.load_sync">Sincronizza stato carichi luce</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-blind"><i class="fa fa-columns"></i> <span data-i18n="vantage-infusion-mqtt.label.blind">Tapparelle VID</span></label>
+        <input type="text" id="node-input-blind" placeholder="55, 56">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-blind_sync" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.blind_sync">Sincronizza stato tapparelle/veneziane</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-sensor"><i class="fa fa-rss"></i> <span data-i18n="vantage-infusion-mqtt.label.sensor">Sensori VID</span></label>
+        <input type="text" id="node-input-sensor" placeholder="141">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-sensor_sync" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.sensor_sync">Sincronizza stato sensori</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-variable"><i class="fa fa-code"></i> <span data-i18n="vantage-infusion-mqtt.label.variable">Variabili VID</span></label>
+        <input type="text" id="node-input-variable" placeholder="501, 502">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-variable_sync" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.variable_sync">Sincronizza stato variabili</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-buttons_string"><i class="fa fa-hand-pointer-o"></i> <span data-i18n="vantage-infusion-mqtt.label.buttons_string">Pulsanti VID</span></label>
+        <input type="text" id="node-input-buttons_string" placeholder="45, 46">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-button_sync" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.button_sync">Invia RELEASE pulsanti all'avvio</span>
+    </div>
+
+    <hr/>
+    <h4><i class="fa fa-refresh"></i> <span data-i18n="vantage-infusion-mqtt.section.sync">Sincronizzazione e Watchdog</span></h4>
+
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-sync_startup" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.sync_startup">Sincronizza all'avvio / connessione</span>
+    </div>
+    <div class="form-row">
+        <label for="node-input-sync_period"><i class="fa fa-clock-o"></i> <span data-i18n="vantage-infusion-mqtt.label.sync_period">Sincronizzazione Periodica (sec)</span></label>
+        <input type="number" id="node-input-sync_period" placeholder="300">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-watchdog" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.watchdog">Attiva Watchdog connessione</span>
+    </div>
+
+    <hr/>
+    <h4><i class="fa fa-home"></i> <span data-i18n="vantage-infusion-mqtt.section.discovery">Home Assistant Auto-Discovery</span></h4>
+
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-mqtt_discovery" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.mqtt_discovery">Abilita Auto-Discovery MQTT</span>
+    </div>
+    <div class="form-row" id="discovery-prefix-row">
+        <label for="node-input-discovery_prefix"><i class="fa fa-folder"></i> <span data-i18n="vantage-infusion-mqtt.label.discovery_prefix">Prefisso Discovery</span></label>
+        <input type="text" id="node-input-discovery_prefix" placeholder="homeassistant">
+    </div>
+
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-debug" style="display:inline-block; width:auto; vertical-align:top;">
+        <span data-i18n="vantage-infusion-mqtt.label.debug">Abilita Log di Debug</span>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="vantage-infusion-mqtt">
+    <p>Bridge bidirezionale avanzato tra <b>Vantage InFusion</b> (Host Commands) e <b>MQTT</b> con doppia uscita.</p>
+
+    <h3>Uscite</h3>
+    <ol>
+        <li><b>Uscita 1 (MQTT)</b>: Invia payload JSON formattati per broker MQTT e Home Assistant, oltre ai messaggi di Auto-Discovery.</li>
+        <li><b>Uscita 2 (Vantage Raw)</b>: Emette la stringa raw dell'evento ricevuto dal controller (es. <code>R:LOAD 120 100</code>).</li>
+    </ol>
+
+    <h3>Ingresso</h3>
+    <p>Riceve comandi MQTT sui topic configurati o comandi diretti Host Command:</p>
+    <ul>
+        <li><code>&lt;VID&gt;/load/vantage/set</code>: <code>"ON"</code>, <code>"OFF"</code> o livello luminosità <code>0-255</code>.</li>
+        <li><code>&lt;VID&gt;/blind/vantage/set</code>: <code>"OPEN"</code>, <code>"CLOSE"</code>, <code>"STOP"</code> o posizione <code>0-100</code>.</li>
+        <li><code>&lt;VID&gt;/button/vantage/set</code>: <code>"PRESS"</code>, <code>"RELEASE"</code>, <code>"TAP"</code>.</li>
+        <li><code>&lt;VID&gt;/task/vantage/set</code>: <code>"BOOT"</code> o nome del trigger.</li>
+        <li><code>&lt;VID&gt;/variable/vantage/set</code>: nuovo valore numerico o testuale.</li>
+        <li><code>all/vantage/sync</code>: forza la sincronizzazione di tutti i dispositivi configurati.</li>
+    </ul>
+</script>

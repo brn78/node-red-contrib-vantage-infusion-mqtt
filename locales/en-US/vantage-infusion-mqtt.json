@@ -1,0 +1,38 @@
+﻿{
+    "vantage-controller": {
+        "label": {
+            "host": "Host / IP Address",
+            "port": "TCP Port",
+            "keepalive": "Keep-Alive Interval (sec)",
+            "pacing": "Pacing Delay (ms)",
+            "debug": "Enable Debug Log"
+        }
+    },
+    "vantage-infusion-mqtt": {
+        "label": {
+            "name": "Name",
+            "controller": "Vantage Controller",
+            "load": "Lighting Loads (VID)",
+            "load_sync": "Synchronize lighting loads",
+            "blind": "Blinds / Shutters (VID)",
+            "blind_sync": "Synchronize blinds / shutters",
+            "sensor": "Sensors (VID)",
+            "sensor_sync": "Synchronize sensors",
+            "variable": "Internal Variables (VID)",
+            "variable_sync": "Synchronize variables",
+            "buttons_string": "Keypad Buttons (VID)",
+            "button_sync": "Reset buttons state on connect",
+            "sync_startup": "Synchronize on connect",
+            "sync_period": "Periodic Synchronization (sec)",
+            "watchdog": "Enable Connection Watchdog",
+            "mqtt_discovery": "Enable Home Assistant MQTT Discovery",
+            "discovery_prefix": "Discovery Prefix",
+            "debug": "Enable Debug Log"
+        },
+        "section": {
+            "entities": "Vantage Objects Configuration (VID)",
+            "sync": "Synchronization & Diagnostics",
+            "discovery": "Home Assistant Integration"
+        }
+    }
+}

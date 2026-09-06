@@ -1,0 +1,49 @@
+﻿<script type="text/javascript">
+    RED.nodes.registerType('vantage-controller', {
+        category: 'config',
+        defaults: {
+            host: { value: "192.168.1.100", required: true },
+            port: { value: 3001, required: true, validate: RED.validators.number() },
+            keepalive: { value: 60, validate: RED.validators.number() },
+            pacing: { value: 50, validate: RED.validators.number() },
+            debug: { value: false }
+        },
+        label: function () {
+            return (this.host ? this.host + ":" + this.port : "Vantage InFusion");
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="vantage-controller">
+    <div class="form-row">
+        <label for="node-config-input-host"><i class="fa fa-globe"></i> <span data-i18n="vantage-controller.label.host">Host / IP</span></label>
+        <input type="text" id="node-config-input-host" placeholder="192.168.1.100">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-port"><i class="fa fa-plug"></i> <span data-i18n="vantage-controller.label.port">Port</span></label>
+        <input type="number" id="node-config-input-port" placeholder="3001">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-keepalive"><i class="fa fa-heartbeat"></i> <span data-i18n="vantage-controller.label.keepalive">Keep-Alive (sec)</span></label>
+        <input type="number" id="node-config-input-keepalive" placeholder="60">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-pacing"><i class="fa fa-hourglass-half"></i> <span data-i18n="vantage-controller.label.pacing">Pacing Delay (ms)</span></label>
+        <input type="number" id="node-config-input-pacing" placeholder="50">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-debug"><i class="fa fa-bug"></i> <span data-i18n="vantage-controller.label.debug">Debug</span></label>
+        <input type="checkbox" id="node-config-input-debug" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="vantage-controller">
+    <p>Configurazione della connessione TCP persistente al controller domotico <b>Vantage InFusion</b>.</p>
+    <h3>Dettagli di Connessione</h3>
+    <ul>
+        <li><b>Host / IP</b>: Indirizzo IP o hostname del controller Vantage InFusion.</li>
+        <li><b>Porta</b>: Porta di comunicazione. Il valore standard per Host in chiaro è <code>3001</code> (o <code>23</code> per sessioni Telnet).</li>
+        <li><b>Keep-Alive</b>: Frequenza in secondi di invio del comando heartbeat <code>VERSION</code> (default 60s).</li>
+        <li><b>Pacing Delay</b>: Ritardo in millisecondi tra l'invio sequenziale dei comandi per evitare congestione (default 50ms).</li>
+    </ul>
+</script>

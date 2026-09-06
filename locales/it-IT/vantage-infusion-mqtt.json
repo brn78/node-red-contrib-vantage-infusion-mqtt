@@ -1,0 +1,38 @@
+﻿{
+    "vantage-controller": {
+        "label": {
+            "host": "Host / Indirizzo IP",
+            "port": "Porta TCP",
+            "keepalive": "Intervallo Keep-Alive (sec)",
+            "pacing": "Cadenza Invio Comandi (ms)",
+            "debug": "Abilita Log Debug"
+        }
+    },
+    "vantage-infusion-mqtt": {
+        "label": {
+            "name": "Nome",
+            "controller": "Controller Vantage",
+            "load": "Carichi Luci (VID)",
+            "load_sync": "Sincronizza stato carichi luce",
+            "blind": "Tapparelle / Veneziane (VID)",
+            "blind_sync": "Sincronizza stato tapparelle",
+            "sensor": "Sensori (VID)",
+            "sensor_sync": "Sincronizza stato sensori",
+            "variable": "Variabili Interne (VID)",
+            "variable_sync": "Sincronizza stato variabili",
+            "buttons_string": "Pulsanti Tastiere (VID)",
+            "button_sync": "Resetta stato pulsanti all'avvio",
+            "sync_startup": "Sincronizza all'avvio / connessione",
+            "sync_period": "Sincronizzazione Periodica (sec)",
+            "watchdog": "Attiva Watchdog connessione",
+            "mqtt_discovery": "Abilita Auto-Discovery MQTT",
+            "discovery_prefix": "Prefisso Discovery Home Assistant",
+            "debug": "Abilita Log Debug"
+        },
+        "section": {
+            "entities": "Configurazione Oggetti Vantage (VID)",
+            "sync": "Sincronizzazione e Diagnostica",
+            "discovery": "Integrazione Home Assistant"
+        }
+    }
+}
