@@ -461,7 +461,7 @@ function buildVantageCommands(msg, options = {}) {
 
     // Direct Vantage Host Commands (no topic or topic doesn't match vantage topic structure)
     if (!topic || (!topic.includes("/vantage/") && !topic.endsWith("vantage/sync"))) {
-        if (payload && /^(LOAD|RAMPLOAD|GETLOAD|BTN|BTNPRESS|BTNRELEASE|BLIND|GETBLIND|TASK|VARIABLE|GETVARIABLE|SENSOR|GETSENSOR|LED|GETLED|STATUS|VERSION|HELP|ECHO|INVOKE)/i.test(payload)) {
+        if (payload && /^(LOAD|RAMPLOAD|GETLOAD|BTN|BTNPRESS|BTNRELEASE|BLIND|GETBLIND|TASK|GETTASK|VARIABLE|GETVARIABLE|SENSOR|GETSENSOR|LED|GETLED|THERM|GETTHERM|STATUS|VERSION|HELP|ECHO|INVOKE)/i.test(payload)) {
             return [payload];
         }
         return [];
@@ -493,6 +493,9 @@ function buildVantageCommands(msg, options = {}) {
     }
     if (topic.endsWith("/led/vantage/sync") && !isNaN(vid)) {
         return [`GETLED ${vid}`];
+    }
+    if (topic.endsWith("/task/vantage/sync") && !isNaN(vid)) {
+        return [`GETTASK ${vid}`];
     }
 
     // 1. LIGHTING LOAD SET
@@ -681,6 +684,13 @@ function buildSyncRequests(options = {}) {
     if (options.led_sync !== false && leds.length > 0) {
         for (const vid of leds) {
             commands.push(`GETLED ${vid}`);
+        }
+    }
+
+    const tasks = parseIdList(options.task);
+    if (options.task_sync !== false && tasks.length > 0) {
+        for (const vid of tasks) {
+            commands.push(`GETTASK ${vid}`);
         }
     }
 

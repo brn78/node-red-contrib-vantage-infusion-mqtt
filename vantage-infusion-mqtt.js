@@ -23,6 +23,7 @@ module.exports = function (RED) {
         node.buttons_string = n.buttons_string || "";
         node.button_sync = n.button_sync || false;
         node.task = n.task || "";
+        node.task_sync = n.task_sync !== false;
         node.thermostat = n.thermostat || "";
         node.thermostat_sync = n.thermostat_sync !== false;
         node.led = n.led || "";
@@ -50,6 +51,7 @@ module.exports = function (RED) {
             buttons_string: node.buttons_string,
             button_sync: node.button_sync,
             task: node.task,
+            task_sync: node.task_sync,
             thermostat: node.thermostat,
             thermostat_sync: node.thermostat_sync,
             led: node.led,

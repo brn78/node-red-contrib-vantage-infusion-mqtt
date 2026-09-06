@@ -122,7 +122,7 @@ Se utilizzi l'add-on ufficiale Node-RED su Home Assistant:
 | **LED Feedback On/Off** | `<VID>/led/vantage/set` | `"ON"` / `"OFF"` o `1` / `0` | `LED <VID> 1` / `LED <VID> 0` |
 | **Termostato Setpoint** | `<VID>/thermostat/vantage/set` | `21.5` oppure `{"heat_sp":21,"cool_sp":25}` | `THERM <VID> 21.5 23.5` |
 | **Imposta Variabile** | `<VID>/variable/vantage/set`| qualsiasi valore | `VARIABLE <VID> <valore>` |
-| **Sincronizza Singolo**| `<VID>/<oggetto>/vantage/sync` | qualsiasi | `GETLOAD <VID>`, `GETBLIND <VID>`, `GETTHERM <VID>`, `GETLED <VID>`, ecc. |
+| **Sincronizza Singolo**| `<VID>/<oggetto>/vantage/sync` | qualsiasi | `GETLOAD <VID>`, `GETBLIND <VID>`, `GETTHERM <VID>`, `GETLED <VID>`, `GETTASK <VID>`, ecc. |
 | **Sincronizza Tutto** | `all/vantage/sync` o `vantage/sync` | `"SYNC"` o qualsiasi | Invia le richieste di stato per tutte le entità configurate |
 | **Comando Host Diretto** | *(qualsiasi topic o non specificato)* | `"LOAD 120 80"` o `"BTN 45"` | Inviato direttamente al controller Vantage |
 

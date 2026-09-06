@@ -23,6 +23,7 @@
             "buttons_string": "Keypad Buttons (VID)",
             "button_sync": "Reset buttons state on connect",
             "task": "Tasks / Macros (VID)",
+            "task_sync": "Synchronize task status (GETTASK)",
             "thermostat": "Thermostats / Climate (VID)",
             "thermostat_sync": "Synchronize thermostats",
             "led": "Keypad LEDs (VID)",

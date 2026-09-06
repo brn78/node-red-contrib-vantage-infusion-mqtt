@@ -192,19 +192,26 @@ it("buildVantageCommands: Direct Host Command", () => {
 });
 
 // 10. Sync requests & Discovery
-it("buildSyncRequests: generates requests for configured IDs", () => {
+it("buildSyncRequests: generates requests for configured IDs including tasks", () => {
     const sync = proto.buildSyncRequests({
         load: "120,121",
         blind: "55",
         sensor: "141",
-        variable: "501"
+        variable: "501",
+        task: "301,302",
+        led: "401",
+        thermostat: "201"
     });
     assert.deepStrictEqual(sync, [
         "GETLOAD 120",
         "GETLOAD 121",
         "GETBLIND 55",
         "GETSENSOR 141",
-        "GETVARIABLE 501"
+        "GETVARIABLE 501",
+        "GETTHERM 201",
+        "GETLED 401",
+        "GETTASK 301",
+        "GETTASK 302"
     ]);
 });
 
@@ -228,8 +235,18 @@ it("parseVantageEvent: Keypad LED (R:LED 401 1)", () => {
     assert.strictEqual(payload.state, "ON");
 });
 
+it("parseVantageEvent: GETTASK response (R:GETTASK 301 1)", () => {
+    const res = proto.parseVantageEvent("R:GETTASK 301 1");
+    assert.ok(res);
+    assert.strictEqual(res.type, "task");
+    assert.strictEqual(res.vid, 301);
+    const payload = JSON.parse(res.mqttMessage.payload);
+    assert.strictEqual(payload.state, "ON");
+});
+
 it("buildVantageCommands: Task, LED, and Thermostat", () => {
     assert.deepStrictEqual(proto.buildVantageCommands({ topic: "301/task/vantage/set", payload: "BOOT" }), ["TASK 301 BOOT"]);
+    assert.deepStrictEqual(proto.buildVantageCommands({ topic: "301/task/vantage/sync" }), ["GETTASK 301"]);
     assert.deepStrictEqual(proto.buildVantageCommands({ topic: "401/led/vantage/set", payload: "ON" }), ["LED 401 1"]);
     assert.deepStrictEqual(proto.buildVantageCommands({ topic: "401/led/vantage/set", payload: "OFF" }), ["LED 401 0"]);
     assert.deepStrictEqual(proto.buildVantageCommands({ topic: "201/thermostat/heat/vantage/set", payload: 21.5 }), ["THERM 201 21.5"]);

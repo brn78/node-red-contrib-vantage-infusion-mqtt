@@ -23,6 +23,7 @@
             "buttons_string": "Pulsanti Tastiere (VID)",
             "button_sync": "Resetta stato pulsanti all'avvio",
             "task": "Task / Scenari (VID)",
+            "task_sync": "Sincronizza stato task (GETTASK)",
             "thermostat": "Termostati / Clima (VID)",
             "thermostat_sync": "Sincronizza stato termostati",
             "led": "LED Tastierini (VID)",
