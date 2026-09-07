@@ -254,7 +254,7 @@ it("buildVantageCommands: Task, LED, and Thermostat", () => {
     assert.deepStrictEqual(proto.buildVantageCommands({ topic: "401/led/vantage/sync" }), ["GETLED 401"]);
 });
 
-it("buildDiscoveryMessages: generates Home Assistant config topics with tasks, leds, therms", () => {
+it("buildDiscoveryMessages: generates Home Assistant config topics with tasks, leds, therms, and attributes", () => {
     const msgs = proto.buildDiscoveryMessages({
         load: "120",
         blind: "55",
@@ -266,6 +266,24 @@ it("buildDiscoveryMessages: generates Home Assistant config topics with tasks, l
         thermostat: "201"
     });
     assert.strictEqual(msgs.length, 9); // connection + load + blind + sensor + variable + task + button + led + therm
+
+    // Test Vantage InFusion binary_sensor connection
+    const connMsg = msgs.find(m => m.topic.includes("binary_sensor/vantage_infusion/config"));
+    assert.ok(connMsg, "Must publish binary_sensor/vantage_infusion/config");
+    const connPayload = JSON.parse(connMsg.payload);
+    assert.strictEqual(connPayload.name, "Vantage InFusion");
+    assert.strictEqual(connPayload.unique_id, "vantage_infusion");
+    assert.strictEqual(connPayload.device_class, "connectivity");
+    assert.strictEqual(connPayload.state_topic, "connection/vantage/status");
+    assert.strictEqual(connPayload.json_attributes_topic, "connection/vantage/status");
+    assert.strictEqual(connPayload.expire_after, 300);
+
+    // Test other entities have attributes
+    const loadMsg = msgs.find(m => m.topic.includes("light/vantage_load_120/config"));
+    assert.ok(loadMsg);
+    const loadPayload = JSON.parse(loadMsg.payload);
+    assert.strictEqual(loadPayload.json_attributes_topic, "120/load/vantage/status");
+
     assert.ok(msgs.some(m => m.topic.includes("button/vantage_task_301/config")));
     assert.ok(msgs.some(m => m.topic.includes("button/vantage_button_45/config")));
     assert.ok(msgs.some(m => m.topic.includes("light/vantage_led_401/config")));

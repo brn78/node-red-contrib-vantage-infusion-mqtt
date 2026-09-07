@@ -70,7 +70,7 @@ module.exports = function (RED) {
                     manufacturer: proto.MANUFACTURER,
                     powered_by: proto.POWERED_BY,
                     function: "Connection status",
-                    controller_version: node.controller ? node.controller.controllerVersion : "unknown"
+                    controller_version: (node.controller && node.controller.controllerVersion) ? node.controller.controllerVersion : "unknown"
                 }
             };
             node.send([
@@ -135,6 +135,9 @@ module.exports = function (RED) {
                 // Output 1: Formatted MQTT JSON message
                 const parsed = proto.parseVantageEvent(line, node.controller.controllerVersion);
                 if (parsed) {
+                    if (parsed.type === "version" && parsed.version) {
+                        node.controller.controllerVersion = parsed.version;
+                    }
                     node.send([parsed.mqttMessage, rawMsg]);
                     node.status({ fill: "green", shape: "dot", text: parsed.statusText });
                 } else {
@@ -183,18 +186,25 @@ module.exports = function (RED) {
                 }, node.sync_period * 1000);
             }
 
-            // Watchdog heartbeat check (every 60 seconds)
-            if (node.watchdog) {
-                watchdogTimer = setInterval(() => {
-                    if (node.controller && node.controller.connected) {
+            // Watchdog & Heartbeat timer (every 60 seconds)
+            // Keeps connection/vantage/status alive (prevents HA expire_after: 300)
+            // and queries controller version to keep connection active
+            watchdogTimer = setInterval(() => {
+                if (node.controller && node.controller.connected) {
+                    // Send periodic ON heartbeat to keep HA binary_sensor alive
+                    sendConnectionStatus("ON");
+
+                    if (node.watchdog) {
                         const elapsed = Date.now() - lastActivity;
                         if (elapsed > 120000) {
                             node.status({ fill: "red", shape: "ring", text: "watchdog: no response" });
                             sendConnectionStatus("OFF");
+                        } else {
+                            node.controller.sendCommand("VERSION");
                         }
                     }
-                }, 60000);
-            }
+                }
+            }, 60000);
         } else {
             node.status({ fill: "red", shape: "dot", text: "missing controller" });
         }
@@ -211,30 +221,66 @@ module.exports = function (RED) {
                 return;
             }
 
-            const topic = (msg.topic || "").trim();
+            // Input status filter and topic signature filter
+            if (msg.topic && typeof msg.topic === 'string') {
+                const topic = msg.topic.trim();
 
-            // Trigger full sync manually
-            if (topic.endsWith("all/vantage/sync") || topic === "vantage/sync" || msg.payload === "SYNC") {
-                performSync();
-                _done();
-                return;
-            }
-
-            // Trigger discovery manually
-            if (topic.endsWith("vantage/discovery") || msg.payload === "DISCOVERY") {
-                publishDiscovery();
-                _done();
-                return;
-            }
-
-            // Compile MQTT command to Host Commands
-            const cmds = proto.buildVantageCommands(msg, options);
-            if (cmds.length > 0) {
-                for (const cmd of cmds) {
-                    node.controller.sendCommand(cmd);
+                // Filtro i messaggi di status per evitare loop
+                if (topic.endsWith("/status")) {
+                    _done();
+                    return;
                 }
-            } else {
-                log(`No command generated for input topic: ${topic} payload: ${msg.payload}`);
+
+                // Passano solo i messaggi destinati a vantage
+                if (!topic.includes("/vantage/")) {
+                    _done();
+                    return;
+                }
+
+                // Trigger full sync manually
+                if (topic.endsWith("all/vantage/sync") || topic === "vantage/sync" || msg.payload === "SYNC") {
+                    performSync();
+                    _done();
+                    return;
+                }
+
+                // Trigger discovery manually
+                if (topic.endsWith("vantage/discovery") || msg.payload === "DISCOVERY") {
+                    publishDiscovery();
+                    _done();
+                    return;
+                }
+
+                // Compile MQTT command to Host Commands
+                const cmds = proto.buildVantageCommands(msg, options);
+                if (cmds.length > 0) {
+                    for (const cmd of cmds) {
+                        node.controller.sendCommand(cmd);
+                    }
+                } else {
+                    log(`No command generated for input topic: ${topic} payload: ${msg.payload}`);
+                }
+                _done();
+                return;
+            }
+
+            // If no topic (msg.topic is empty or missing), pass direct host command
+            if (msg.payload) {
+                let payloadStr = msg.payload;
+                if (Buffer.isBuffer(payloadStr)) {
+                    payloadStr = payloadStr.toString("utf8");
+                } else if (typeof payloadStr !== "string") {
+                    payloadStr = String(payloadStr);
+                }
+                payloadStr = payloadStr.trim();
+
+                if (payloadStr === "SYNC") {
+                    performSync();
+                } else if (payloadStr === "DISCOVERY") {
+                    publishDiscovery();
+                } else if (payloadStr.length > 0) {
+                    node.controller.sendCommand(payloadStr);
+                }
             }
 
             _done();

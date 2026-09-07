@@ -1,4 +1,4 @@
-﻿const net = require("net");
+const net = require("net");
 const assert = require("assert");
 
 console.log("Starting lifecycle and dual-output tests for Vantage nodes...\n");
@@ -109,6 +109,16 @@ server.listen(TEST_PORT, "127.0.0.1", () => {
         assert.ok(receivedFromClient.includes("VERSION"), "Should have sent VERSION");
         console.log("  [PASS] Startup subscription commands sent upon connect");
 
+        // Verify connection status message
+        const connStatusMsg = receivedOutputs.find(o => o && o[0] && o[0].topic === "connection/vantage/status");
+        assert.ok(connStatusMsg, "Should have published connection/vantage/status");
+        const connStatusPayload = JSON.parse(connStatusMsg[0].payload);
+        assert.strictEqual(connStatusPayload.state, "ON");
+        assert.strictEqual(connStatusPayload.attributes.manufacturer, "Vantage Controls");
+        assert.strictEqual(connStatusPayload.attributes.powered_by, "Bruno Leonardi");
+        assert.strictEqual(connStatusPayload.attributes.function, "Connection status");
+        console.log("  [PASS] Connection status ON with signature published on connect");
+
         // Verify discovery messages published on connect
         const discoveryMsgs = receivedOutputs.filter(o => o && o[0] && o[0].topic && o[0].topic.includes("/config"));
         assert.ok(discoveryMsgs.length > 0, "Should have published HA discovery messages");
@@ -145,24 +155,42 @@ server.listen(TEST_PORT, "127.0.0.1", () => {
                 assert.ok(receivedFromClient.includes("LOAD 120 0"), "Controller should receive LOAD 120 0");
                 console.log("  [PASS] MQTT Input successfully compiled and sent to Vantage controller");
 
-                // Test direct raw host command
+                // Test input filter: message with /status must be dropped (loop prevention)
+                receivedFromClient.length = 0;
                 bridgeNode.emit("input", {
-                    payload: "RAMPLOAD 120 75 3.0"
+                    topic: "120/load/vantage/status",
+                    payload: "OFF"
+                });
+
+                // Test input filter: message without /vantage/ must be dropped
+                bridgeNode.emit("input", {
+                    topic: "120/load/other_system/set",
+                    payload: "OFF"
                 });
 
                 setTimeout(() => {
-                    assert.ok(receivedFromClient.includes("RAMPLOAD 120 75 3.0"), "Direct host command passed through");
-                    console.log("  [PASS] Direct Host Command passed through cleanly");
+                    assert.strictEqual(receivedFromClient.length, 0, "Messages matching /status or lacking /vantage/ must be filtered out");
+                    console.log("  [PASS] Status loop prevention and topic validation filter verified");
 
-                    // Close nodes
-                    bridgeNode.emit("close", false, () => {
-                        controllerNode.emit("close", () => {
-                            server.close(() => {
-                                console.log("\nAll lifecycle and dual-output tests passed successfully!");
-                                process.exit(0);
+                    // Test direct raw host command
+                    bridgeNode.emit("input", {
+                        payload: "RAMPLOAD 120 75 3.0"
+                    });
+
+                    setTimeout(() => {
+                        assert.ok(receivedFromClient.includes("RAMPLOAD 120 75 3.0"), "Direct host command passed through");
+                        console.log("  [PASS] Direct Host Command passed through cleanly");
+
+                        // Close nodes
+                        bridgeNode.emit("close", false, () => {
+                            controllerNode.emit("close", () => {
+                                server.close(() => {
+                                    console.log("\nAll lifecycle and dual-output tests passed successfully!");
+                                    process.exit(0);
+                                });
                             });
                         });
-                    });
+                    }, 100);
                 }, 100);
             }, 100);
         }, 100);
