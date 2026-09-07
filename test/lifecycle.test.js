@@ -129,12 +129,15 @@ server.listen(TEST_PORT, "127.0.0.1", () => {
         clientSocket.write("R:LOAD 120 100\r\n");
 
         setTimeout(() => {
-            assert.strictEqual(receivedOutputs.length, 1, "Should have received 1 dual-output emit");
-            const output1 = receivedOutputs[0][0]; // MQTT
-            const output2 = receivedOutputs[0][1]; // Raw Vantage
+            assert.ok(receivedOutputs.length >= 2, "Should have received connection status and load emit");
+            const connOutput = receivedOutputs.find(o => o && o[0] && o[0].topic === "connection/vantage/status");
+            assert.ok(connOutput, "Connection status should be emitted on reception");
 
-            assert.ok(output1, "Output 1 (MQTT) should exist");
-            assert.strictEqual(output1.topic, "120/load/vantage/status");
+            const loadOutput = receivedOutputs.find(o => o && o[0] && o[0].topic === "120/load/vantage/status");
+            assert.ok(loadOutput, "Output 1 (MQTT) should exist for load");
+            const output1 = loadOutput[0];
+            const output2 = loadOutput[1];
+
             const payload = JSON.parse(output1.payload);
             assert.strictEqual(payload.state, "ON");
             assert.strictEqual(payload.brightness, 255);
@@ -142,7 +145,7 @@ server.listen(TEST_PORT, "127.0.0.1", () => {
             assert.ok(output2, "Output 2 (Raw Vantage) should exist");
             assert.strictEqual(output2.topic, "vantage/raw/event");
             assert.strictEqual(output2.payload, "R:LOAD 120 100");
-            console.log("  [PASS] Dual-output verified: Output 1 (MQTT JSON) and Output 2 (Vantage Raw as-is)");
+            console.log("  [PASS] Dual-output verified: Output 1 (MQTT JSON + connection/vantage/status) and Output 2 (Vantage Raw as-is)");
 
             // Test sending command from input
             receivedFromClient.length = 0;

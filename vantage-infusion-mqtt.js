@@ -78,7 +78,8 @@ module.exports = function (RED) {
                     topic: proto.TOPIC_CONNECTION_STATUS,
                     payload: JSON.stringify(update),
                     qos: 0,
-                    retain: true
+                    retain: true,
+                    _msgid: (RED.util && RED.util.generateId) ? RED.util.generateId() : undefined
                 },
                 null
             ]);
@@ -126,10 +127,14 @@ module.exports = function (RED) {
             onDataHandler = function (line) {
                 lastActivity = Date.now();
 
+                // Emette connection/vantage/status ad ogni ricezione di linea/risposta
+                sendConnectionStatus("ON");
+
                 // Output 2: Raw Vantage string as-is
                 const rawMsg = {
                     topic: "vantage/raw/event",
-                    payload: line
+                    payload: line,
+                    _msgid: (RED.util && RED.util.generateId) ? RED.util.generateId() : undefined
                 };
 
                 // Output 1: Formatted MQTT JSON message
@@ -146,7 +151,8 @@ module.exports = function (RED) {
             };
 
             onConnectedHandler = function () {
-                sendConnectionStatus("ON");
+                node.status({ fill: "green", shape: "dot", text: "connected" });
+                sendConnectionStatus("ON", true);
                 publishDiscovery();
                 resetButtons();
 
@@ -158,7 +164,8 @@ module.exports = function (RED) {
             };
 
             onDisconnectedHandler = function () {
-                sendConnectionStatus("OFF");
+                node.status({ fill: "red", shape: "ring", text: "disconnected" });
+                sendConnectionStatus("OFF", true);
             };
 
             onStatusHandler = function (s) {
@@ -170,14 +177,19 @@ module.exports = function (RED) {
             node.controller.eventEmitter.on("disconnected", onDisconnectedHandler);
             node.controller.eventEmitter.on("status", onStatusHandler);
 
-            // Initial state check
-            if (node.controller.connected) {
-                node.status({ fill: "green", shape: "dot", text: "connected" });
-                sendConnectionStatus("ON");
-                publishDiscovery();
-            } else {
-                node.status({ fill: "yellow", shape: "ring", text: "connecting" });
-            }
+            // Avvio iniziale stato di connessione dopo 1s per garantire che i collegamenti del flusso siano pronti
+            setTimeout(() => {
+                if (node.controller) {
+                    if (node.controller.connected) {
+                        node.status({ fill: "green", shape: "dot", text: "connected" });
+                        sendConnectionStatus("ON", true);
+                        publishDiscovery();
+                    } else {
+                        node.status({ fill: "yellow", shape: "ring", text: "connecting" });
+                        sendConnectionStatus("OFF", true);
+                    }
+                }
+            }, 1000);
 
             // Periodic sync timer
             if (node.sync_period > 0) {
@@ -186,25 +198,25 @@ module.exports = function (RED) {
                 }, node.sync_period * 1000);
             }
 
-            // Watchdog & Heartbeat timer (every 60 seconds)
-            // Keeps connection/vantage/status alive (prevents HA expire_after: 300)
-            // and queries controller version to keep connection active
+            // Watchdog & Heartbeat timer a cadenza (ogni 30 secondi)
+            // Mantiene vivo connection/vantage/status in Home Assistant (expire_after: 300)
+            // e invia ping periodico VERSION
             watchdogTimer = setInterval(() => {
                 if (node.controller && node.controller.connected) {
-                    // Send periodic ON heartbeat to keep HA binary_sensor alive
-                    sendConnectionStatus("ON");
+                    // Invia stato periodico ON a cadenza per Home Assistant
+                    sendConnectionStatus("ON", true);
 
                     if (node.watchdog) {
                         const elapsed = Date.now() - lastActivity;
                         if (elapsed > 120000) {
                             node.status({ fill: "red", shape: "ring", text: "watchdog: no response" });
-                            sendConnectionStatus("OFF");
+                            sendConnectionStatus("OFF", true);
                         } else {
                             node.controller.sendCommand("VERSION");
                         }
                     }
                 }
-            }, 60000);
+            }, 30000);
         } else {
             node.status({ fill: "red", shape: "dot", text: "missing controller" });
         }
